@@ -1,0 +1,1 @@
+Heart Disease Prediction is a multimodal machine learning project that predicts heart disease risk using video and audio inputs. It integrates multiple ML models to evaluate predictions and an LLM API to provide AI-powered assistance and explain results in a user-friendly way.
