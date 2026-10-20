@@ -1,0 +1,19 @@
+# Streamlit local secrets configuration
+.streamlit/
+
+# Virtual Environment
+.venv/
+venv/
+ENV/
+
+# Python Cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# Large Model Weights
+video_model/best_model.pth
