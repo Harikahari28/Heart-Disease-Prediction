@@ -14,11 +14,19 @@ from explainability.gradcam_video import gradcam_for_video
 from explainability.chatbot_engine import get_chatbot_response
 
 
+
 @st.cache_resource
 def load_echo_cached():
-    return load_echo_model()
+    try:
+        return load_echo_model()
+    except (FileNotFoundError, OSError) as e:
+        st.warning(f"Video model unavailable: {e}")
+        return None
 
 echo_model = load_echo_cached()
+
+
+
 
 if hasattr(st, "fragment"):
     fragment = st.fragment
@@ -773,232 +781,255 @@ elif mode == "📋 Tabular Risk Factors":
 # ===============================
 # ECHO VIDEO MODE
 # ===============================
-elif mode == "🫀 ECHO Video Analysis":
-    st.markdown("<div class='section-header'>🫀 Echocardiography Video Analysis</div>", unsafe_allow_html=True)
-    st.markdown("Upload an apical 4-chamber echocardiogram video for automated cardiac function assessment.")
+# elif mode == "🫀 ECHO Video Analysis":
+#     st.markdown("<div class='section-header'>🫀 Echocardiography Video Analysis</div>", unsafe_allow_html=True)
+#     st.markdown("Upload an apical 4-chamber echocardiogram video for automated cardiac function assessment.")
 
-    uploaded_video = st.file_uploader("Choose an ECHO video file (.mp4 recommended)", type=["mp4", "avi", "mov"])
+#     uploaded_video = st.file_uploader("Choose an ECHO video file (.mp4 recommended)", type=["mp4", "avi", "mov"])
 
-    if uploaded_video is not None:
-        file_key = f"echo_file_{uploaded_video.name}_{uploaded_video.size}"
-        if "echo_file_key" not in st.session_state or st.session_state.echo_file_key != file_key:
-            st.session_state.echo_file_key = file_key
-            if "echo_result" in st.session_state:
-                del st.session_state.echo_result
+#     if uploaded_video is not None:
+#         file_key = f"echo_file_{uploaded_video.name}_{uploaded_video.size}"
+#         if "echo_file_key" not in st.session_state or st.session_state.echo_file_key != file_key:
+#             st.session_state.echo_file_key = file_key
+#             if "echo_result" in st.session_state:
+#                 del st.session_state.echo_result
 
-        st.video(uploaded_video)
+#         st.video(uploaded_video)
         
-        if st.button("🔬 Analyze Video", use_container_width=True):
-            with st.spinner("Processing video and running EchoNet-Dynamic inference..."):
-                uploaded_video.seek(0)
-                with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as tmp:
-                    tmp.write(uploaded_video.read())
-                    video_path = tmp.name
+#         if st.button("🔬 Analyze Video", use_container_width=True):
+#             with st.spinner("Processing video and running EchoNet-Dynamic inference..."):
+#                 uploaded_video.seek(0)
+#                 with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as tmp:
+#                     tmp.write(uploaded_video.read())
+#                     video_path = tmp.name
 
-                prob = predict_video(video_path, echo_model)
-                st.session_state.echo_result = {
-                    "prob": prob,
-                    "video_path": video_path
-                }
+#                 prob = predict_video(video_path, echo_model)
+#                 st.session_state.echo_result = {
+#                     "prob": prob,
+#                     "video_path": video_path
+#                 }
 
-        if "echo_result" in st.session_state:
-            res = st.session_state.echo_result
-            prob = res["prob"]
-            video_path = res["video_path"]
+#         if "echo_result" in st.session_state:
+#             res = st.session_state.echo_result
+#             prob = res["prob"]
+#             video_path = res["video_path"]
 
-            st.markdown("<div class='section-header'>📊 Echo Analysis Result</div>", unsafe_allow_html=True)
+#             st.markdown("<div class='section-header'>📊 Echo Analysis Result</div>", unsafe_allow_html=True)
             
-            risk_class = "risk-high" if prob > 0.45 else "risk-low"
-            risk_text = "High Risk based on echocardiography" if prob > 0.45 else "Low Risk based on echocardiography"
+#             risk_class = "risk-high" if prob > 0.45 else "risk-low"
+#             risk_text = "High Risk based on echocardiography" if prob > 0.45 else "Low Risk based on echocardiography"
 
-            st.markdown(f"""
-            <div class='pred-card'>
-                <div class='model-name'>Model Prediction</div>
-                <div class='prob-text'>Probability of abnormal cardiac function: <strong>{prob*100:.2f}%</strong></div>
-                <div style='margin-top:12px; font-size:18px;'>
-                    Assessment: <span class='{risk_class}'>{risk_text}</span>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
+#             st.markdown(f"""
+#             <div class='pred-card'>
+#                 <div class='model-name'>Model Prediction</div>
+#                 <div class='prob-text'>Probability of abnormal cardiac function: <strong>{prob*100:.2f}%</strong></div>
+#                 <div style='margin-top:12px; font-size:18px;'>
+#                     Assessment: <span class='{risk_class}'>{risk_text}</span>
+#                 </div>
+#             </div>
+#             """, unsafe_allow_html=True)
 
-            with st.expander("🧭 Explainability: Echo Grad-CAM"):
-                st.subheader("Best Frame with Convergent Heatmap")
-                try:
-                    cam_img = gradcam_for_video(video_path, echo_model)
-                    st.image(cam_img, use_container_width=True)
-                except Exception as e:
-                    st.error(f"Grad-CAM image failed: {e}")
+#             with st.expander("🧭 Explainability: Echo Grad-CAM"):
+#                 st.subheader("Best Frame with Convergent Heatmap")
+#                 try:
+#                     cam_img = gradcam_for_video(video_path, echo_model)
+#                     st.image(cam_img, use_container_width=True)
+#                 except Exception as e:
+#                     st.error(f"Grad-CAM image failed: {e}")
 
+elif mode == "🫀 ECHO Video Analysis":
+    st.markdown(
+        "<div class='section-header'>🫀 Echocardiography Video Analysis</div>",
+        unsafe_allow_html=True
+    )
+    st.warning(
+        "Video analysis is unavailable because the trained "
+        "video model checkpoint (best_model.pth) is missing."
+    )
+    st.info("You can still use Tabular Risk Factors and Chat Assistant.")
 # ===============================
 # MULTIMODAL PLACEHOLDER
 # ===============================
+# elif mode == "🔗 Multimodal Prediction":
+#     st.markdown("<div class='section-header'>🔗 Multimodal Heart Disease Assessment</div>", unsafe_allow_html=True)
+#     st.markdown(
+#         "This module combines **clinical risk factors** and **echocardiography video analysis** "
+#         "using a **late-fusion, probability-level ensemble**."
+#     )
+
+#     with st.form("multimodal_form", clear_on_submit=False):
+#         col1, col2 = st.columns(2)
+
+#         with col1:
+#             age = st.number_input("Age (years)", min_value=0, max_value=120, value=50)
+#             sex = st.selectbox("Sex", ["M", "F"])
+#             chest_pain = st.selectbox("Chest Pain Type", ["ASY", "ATA", "NAP", "TA"])
+#             resting_bp = st.number_input("Resting Blood Pressure (mmHg)", 0, 300, 140)
+#             cholesterol = st.number_input("Serum Cholesterol (mg/dL)", 0, 600, 200)
+#             fasting_bs = st.selectbox("Fasting Blood Sugar > 120 mg/dL", [0, 1])
+
+#         with col2:
+#             resting_ecg = st.selectbox("Resting ECG Result", ["Normal", "ST", "LVH"])
+#             max_hr = st.number_input("Maximum Heart Rate Achieved", 0, 220, 150)
+#             exercise_angina = st.selectbox("Exercise-Induced Angina", ["N", "Y"])
+#             oldpeak = st.number_input("Oldpeak (ST Depression)", -3.0, 7.0, 1.0)
+#             st_slope = st.selectbox("ST Slope", ["Up", "Flat", "Down"])
+
+#         uploaded_video = st.file_uploader(
+#             "Upload Echocardiography Video (.mp4)", type=["mp4", "avi", "mov"]
+#         )
+#         if uploaded_video is not None:
+#             st.video(uploaded_video)
+#         submitted = st.form_submit_button("🔬 Run Multimodal Assessment", use_container_width=True)
+
+#     if uploaded_video is not None:
+#         file_key = f"multi_file_{uploaded_video.name}_{uploaded_video.size}"
+#         if "multi_file_key" not in st.session_state or st.session_state.multi_file_key != file_key:
+#             st.session_state.multi_file_key = file_key
+#             if "multi_result" in st.session_state:
+#                 del st.session_state.multi_result
+
+#     if submitted:
+#         if uploaded_video is None:
+#             st.error("Please upload an echocardiography video for multimodal assessment.")
+#         else:
+#             with st.spinner("Running multimodal analysis..."):
+#                 # ------------------------------
+#                 # TABULAR INPUT PREPARATION
+#                 # ------------------------------
+#                 input_df = pd.DataFrame([{
+#                     "Age": age,
+#                     "Sex": sex,
+#                     "ChestPainType": chest_pain,
+#                     "RestingBP": resting_bp,
+#                     "Cholesterol": cholesterol,
+#                     "FastingBS": fasting_bs,
+#                     "RestingECG": resting_ecg,
+#                     "MaxHR": max_hr,
+#                     "ExerciseAngina": exercise_angina,
+#                     "Oldpeak": oldpeak,
+#                     "ST_Slope": st_slope
+#                 }])
+
+#                 encoded = pd.get_dummies(input_df)
+#                 encoded = encoded.reindex(columns=training_columns, fill_value=0)
+
+#                 # ------------------------------
+#                 # TABULAR ENSEMBLE (PERFORMANCE-WEIGHTED)
+#                 # ------------------------------
+#                 P_tab, tab_details = ensemble_tabular(models, encoded)
+
+#                 # ------------------------------
+#                 # ECHO MODEL INFERENCE
+#                 # ------------------------------
+#                 uploaded_video.seek(0)
+#                 with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as tmp:
+#                     tmp.write(uploaded_video.read())
+#                     video_path = tmp.name
+
+#                 P_echo = predict_video(video_path, echo_model)
+
+#                 # ------------------------------
+#                 # LATE FUSION (CLINICALLY WEIGHTED)
+#                 # ------------------------------
+#                 P_multi = late_fusion(P_tab, P_echo, alpha=0.6)
+#                 P_multi_cat = late_fusion(P_tab, P_echo, alpha=0.6, as_category=True)
+
+#                 st.session_state.multi_result = {
+#                     "P_tab": P_tab,
+#                     "P_echo": P_echo,
+#                     "P_multi": P_multi,
+#                     "P_multi_cat": P_multi_cat,
+#                     "encoded": encoded,
+#                     "video_path": video_path,
+#                     "input_df": input_df
+#                 }
+
+#     if "multi_result" in st.session_state:
+#         res = st.session_state.multi_result
+#         P_tab = res["P_tab"]
+#         P_echo = res["P_echo"]
+#         P_multi = res["P_multi"]
+#         P_multi_cat = res["P_multi_cat"]
+#         encoded = res["encoded"]
+#         video_path = res["video_path"]
+#         input_df = res["input_df"]
+
+#         # ------------------------------
+#         # RESULTS
+#         # ------------------------------
+#         st.markdown("<div class='section-header'>📊 Multimodal Result</div>", unsafe_allow_html=True)
+
+#         st.markdown(f"""
+#         <div class='pred-card'>
+#             <div class='model-name'>Tabular Risk Ensemble</div>
+#             <div class='prob-text'>Probability of Heart Failure: <strong>{P_tab*100:.2f}%</strong></div>
+#         </div>
+#         """, unsafe_allow_html=True)
+
+#         st.markdown(f"""
+#         <div class='pred-card'>
+#             <div class='model-name'>Echocardiography Model</div>
+#             <div class='prob-text'>Probability of disease due to Reduced EF: <strong>{P_echo*100:.2f}%</strong></div>
+#         </div>
+#         """, unsafe_allow_html=True)
+
+#         # Map category to styling and human-readable text
+#         if P_multi_cat == "low":
+#             risk_class = "risk-low"
+#             risk_text = "Low Risk of Heart Failure"
+#         elif P_multi_cat == "medium":
+#             risk_class = "risk-medium"
+#             risk_text = "Moderate Risk of Heart Failure"
+#         else:
+#             risk_class = "risk-high"
+#             risk_text = "High Risk of Heart Failure"
+
+#         st.markdown(f"""
+#         <div class='final-risk'>
+#             <strong>Final Multimodal Probability: {P_multi*100:.2f}%</strong><br>
+#             <span class='{risk_class}'>{risk_text} ({P_multi_cat.title()})</span><br>
+#             <small>Fusion Strategy: Late fusion (Echo 60% • Clinical 40%)</small>
+#         </div>
+#         """, unsafe_allow_html=True)
+
+#         with st.expander("🧭 Explainability: SHAP + Grad-CAM"):
+#             st.subheader("Tabular SHAP Waterfall Plot")
+#             try:
+#                 with st.spinner("Generating SHAP waterfall plot..."):
+#                     shap_fig = explain_tabular(models, encoded, nsamples=50)
+#                     st.pyplot(shap_fig)
+#             except Exception as e:
+#                 st.error(f"SHAP waterfall plot failed: {e}")
+
+#             st.subheader("Tabular SHAP Table")
+#             try:
+#                 with st.spinner("Generating SHAP explanations..."):
+#                     shap_table = explain_tabular_table(models, encoded, nsamples=50)
+#                     st.dataframe(shap_table)
+#             except Exception as e:
+#                 st.error(f"SHAP explanation failed: {e}")
+
+#             st.subheader("Best Frame with Convergent Heatmap")
+#             try:
+#                 cam_img = gradcam_for_video(video_path, echo_model)
+#                 st.image(cam_img, use_container_width=True)
+#             except Exception as e:
+#                 st.error(f"Grad-CAM failed: {e}")
+
 elif mode == "🔗 Multimodal Prediction":
-    st.markdown("<div class='section-header'>🔗 Multimodal Heart Disease Assessment</div>", unsafe_allow_html=True)
     st.markdown(
-        "This module combines **clinical risk factors** and **echocardiography video analysis** "
-        "using a **late-fusion, probability-level ensemble**."
+        "<div class='section-header'>🔗 Multimodal Prediction</div>",
+        unsafe_allow_html=True
     )
-
-    with st.form("multimodal_form", clear_on_submit=False):
-        col1, col2 = st.columns(2)
-
-        with col1:
-            age = st.number_input("Age (years)", min_value=0, max_value=120, value=50)
-            sex = st.selectbox("Sex", ["M", "F"])
-            chest_pain = st.selectbox("Chest Pain Type", ["ASY", "ATA", "NAP", "TA"])
-            resting_bp = st.number_input("Resting Blood Pressure (mmHg)", 0, 300, 140)
-            cholesterol = st.number_input("Serum Cholesterol (mg/dL)", 0, 600, 200)
-            fasting_bs = st.selectbox("Fasting Blood Sugar > 120 mg/dL", [0, 1])
-
-        with col2:
-            resting_ecg = st.selectbox("Resting ECG Result", ["Normal", "ST", "LVH"])
-            max_hr = st.number_input("Maximum Heart Rate Achieved", 0, 220, 150)
-            exercise_angina = st.selectbox("Exercise-Induced Angina", ["N", "Y"])
-            oldpeak = st.number_input("Oldpeak (ST Depression)", -3.0, 7.0, 1.0)
-            st_slope = st.selectbox("ST Slope", ["Up", "Flat", "Down"])
-
-        uploaded_video = st.file_uploader(
-            "Upload Echocardiography Video (.mp4)", type=["mp4", "avi", "mov"]
-        )
-        if uploaded_video is not None:
-            st.video(uploaded_video)
-        submitted = st.form_submit_button("🔬 Run Multimodal Assessment", use_container_width=True)
-
-    if uploaded_video is not None:
-        file_key = f"multi_file_{uploaded_video.name}_{uploaded_video.size}"
-        if "multi_file_key" not in st.session_state or st.session_state.multi_file_key != file_key:
-            st.session_state.multi_file_key = file_key
-            if "multi_result" in st.session_state:
-                del st.session_state.multi_result
-
-    if submitted:
-        if uploaded_video is None:
-            st.error("Please upload an echocardiography video for multimodal assessment.")
-        else:
-            with st.spinner("Running multimodal analysis..."):
-                # ------------------------------
-                # TABULAR INPUT PREPARATION
-                # ------------------------------
-                input_df = pd.DataFrame([{
-                    "Age": age,
-                    "Sex": sex,
-                    "ChestPainType": chest_pain,
-                    "RestingBP": resting_bp,
-                    "Cholesterol": cholesterol,
-                    "FastingBS": fasting_bs,
-                    "RestingECG": resting_ecg,
-                    "MaxHR": max_hr,
-                    "ExerciseAngina": exercise_angina,
-                    "Oldpeak": oldpeak,
-                    "ST_Slope": st_slope
-                }])
-
-                encoded = pd.get_dummies(input_df)
-                encoded = encoded.reindex(columns=training_columns, fill_value=0)
-
-                # ------------------------------
-                # TABULAR ENSEMBLE (PERFORMANCE-WEIGHTED)
-                # ------------------------------
-                P_tab, tab_details = ensemble_tabular(models, encoded)
-
-                # ------------------------------
-                # ECHO MODEL INFERENCE
-                # ------------------------------
-                uploaded_video.seek(0)
-                with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as tmp:
-                    tmp.write(uploaded_video.read())
-                    video_path = tmp.name
-
-                P_echo = predict_video(video_path, echo_model)
-
-                # ------------------------------
-                # LATE FUSION (CLINICALLY WEIGHTED)
-                # ------------------------------
-                P_multi = late_fusion(P_tab, P_echo, alpha=0.6)
-                P_multi_cat = late_fusion(P_tab, P_echo, alpha=0.6, as_category=True)
-
-                st.session_state.multi_result = {
-                    "P_tab": P_tab,
-                    "P_echo": P_echo,
-                    "P_multi": P_multi,
-                    "P_multi_cat": P_multi_cat,
-                    "encoded": encoded,
-                    "video_path": video_path,
-                    "input_df": input_df
-                }
-
-    if "multi_result" in st.session_state:
-        res = st.session_state.multi_result
-        P_tab = res["P_tab"]
-        P_echo = res["P_echo"]
-        P_multi = res["P_multi"]
-        P_multi_cat = res["P_multi_cat"]
-        encoded = res["encoded"]
-        video_path = res["video_path"]
-        input_df = res["input_df"]
-
-        # ------------------------------
-        # RESULTS
-        # ------------------------------
-        st.markdown("<div class='section-header'>📊 Multimodal Result</div>", unsafe_allow_html=True)
-
-        st.markdown(f"""
-        <div class='pred-card'>
-            <div class='model-name'>Tabular Risk Ensemble</div>
-            <div class='prob-text'>Probability of Heart Failure: <strong>{P_tab*100:.2f}%</strong></div>
-        </div>
-        """, unsafe_allow_html=True)
-
-        st.markdown(f"""
-        <div class='pred-card'>
-            <div class='model-name'>Echocardiography Model</div>
-            <div class='prob-text'>Probability of disease due to Reduced EF: <strong>{P_echo*100:.2f}%</strong></div>
-        </div>
-        """, unsafe_allow_html=True)
-
-        # Map category to styling and human-readable text
-        if P_multi_cat == "low":
-            risk_class = "risk-low"
-            risk_text = "Low Risk of Heart Failure"
-        elif P_multi_cat == "medium":
-            risk_class = "risk-medium"
-            risk_text = "Moderate Risk of Heart Failure"
-        else:
-            risk_class = "risk-high"
-            risk_text = "High Risk of Heart Failure"
-
-        st.markdown(f"""
-        <div class='final-risk'>
-            <strong>Final Multimodal Probability: {P_multi*100:.2f}%</strong><br>
-            <span class='{risk_class}'>{risk_text} ({P_multi_cat.title()})</span><br>
-            <small>Fusion Strategy: Late fusion (Echo 60% • Clinical 40%)</small>
-        </div>
-        """, unsafe_allow_html=True)
-
-        with st.expander("🧭 Explainability: SHAP + Grad-CAM"):
-            st.subheader("Tabular SHAP Waterfall Plot")
-            try:
-                with st.spinner("Generating SHAP waterfall plot..."):
-                    shap_fig = explain_tabular(models, encoded, nsamples=50)
-                    st.pyplot(shap_fig)
-            except Exception as e:
-                st.error(f"SHAP waterfall plot failed: {e}")
-
-            st.subheader("Tabular SHAP Table")
-            try:
-                with st.spinner("Generating SHAP explanations..."):
-                    shap_table = explain_tabular_table(models, encoded, nsamples=50)
-                    st.dataframe(shap_table)
-            except Exception as e:
-                st.error(f"SHAP explanation failed: {e}")
-
-            st.subheader("Best Frame with Convergent Heatmap")
-            try:
-                cam_img = gradcam_for_video(video_path, echo_model)
-                st.image(cam_img, use_container_width=True)
-            except Exception as e:
-                st.error(f"Grad-CAM failed: {e}")
-
+    st.warning(
+        "Multimodal prediction is temporarily unavailable "
+        "because the trained video model checkpoint is missing."
+    )
+    st.info(
+        "Use the Tabular Risk Factors page for predictions "
+        "from the available trained clinical models."
+    )
 
 # ===============================
 # CHAT ASSISTANT
