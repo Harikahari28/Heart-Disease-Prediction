@@ -3,27 +3,26 @@ import pandas as pd
 import numpy as np
 import pickle
 import joblib
-import tempfile
-from video_model.inference import load_echo_model, predict_video
+# from video_model.inference import load_echo_model, predict_video
 
-from multimodal.tabular_ensemble import ensemble_tabular
-from multimodal.late_fusion import late_fusion
-from video_model.inference import predict_video
+# from multimodal.tabular_ensemble import ensemble_tabular
+# from multimodal.late_fusion import late_fusion
+# from video_model.inference import predict_video
 from explainability.shap_tabular import explain_tabular, explain_tabular_table
-from explainability.gradcam_video import gradcam_for_video
+# from explainability.gradcam_video import gradcam_for_video
 from explainability.chatbot_engine import get_chatbot_response
 
 
 
-@st.cache_resource
-def load_echo_cached():
-    try:
-        return load_echo_model()
-    except (FileNotFoundError, OSError) as e:
-        st.warning(f"Video model unavailable: {e}")
-        return None
+# @st.cache_resource
+# def load_echo_cached():
+#     try:
+#         return load_echo_model()
+#     except (FileNotFoundError, OSError) as e:
+#         st.warning(f"Video model unavailable: {e}")
+#         return None
 
-echo_model = load_echo_cached()
+# echo_model = load_echo_cached()
 
 
 
@@ -1017,19 +1016,7 @@ elif mode == "🫀 ECHO Video Analysis":
 #             except Exception as e:
 #                 st.error(f"Grad-CAM failed: {e}")
 
-elif mode == "🔗 Multimodal Prediction":
-    st.markdown(
-        "<div class='section-header'>🔗 Multimodal Prediction</div>",
-        unsafe_allow_html=True
-    )
-    st.warning(
-        "Multimodal prediction is temporarily unavailable "
-        "because the trained video model checkpoint is missing."
-    )
-    st.info(
-        "Use the Tabular Risk Factors page for predictions "
-        "from the available trained clinical models."
-    )
+
 
 # ===============================
 # CHAT ASSISTANT

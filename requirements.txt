@@ -8,7 +8,5 @@ xgboost
 matplotlib
 seaborn
 shap
-torch
-torchvision
 opencv-python
 
